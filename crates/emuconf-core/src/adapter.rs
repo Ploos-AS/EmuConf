@@ -15,7 +15,29 @@ fn pairs(contents: &str) -> BTreeMap<String, String> {
     }).collect()
 }
 
+fn bool_value(v: &str) -> Option<bool> {
+    match v.trim().to_ascii_lowercase().as_str() {
+        "1"|"true"|"yes"|"on" => Some(true),
+        "0"|"false"|"no"|"off" => Some(false),
+        _ => None,
+    }
+}
 fn mib(v: &str) -> Option<u64> { v.parse::<u64>().ok().map(|n| n*1024*1024) }
+fn first(p:&BTreeMap<String,String>, keys:&[&str])->Option<String> {
+    keys.iter().find_map(|k|p.get(*k).cloned())
+}
+fn collect_indexed(p:&BTreeMap<String,String>, prefixes:&[&str])->Vec<String> {
+    let mut v:Vec<(usize,String)>=Vec::new();
+    for (k,value) in p {
+        for prefix in prefixes {
+            if let Some(rest)=k.strip_prefix(prefix) {
+                if let Ok(i)=rest.parse::<usize>() { v.push((i,value.clone())); }
+            }
+        }
+    }
+    v.sort_by_key(|x|x.0);
+    v.into_iter().map(|x|x.1).collect()
+}
 
 pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
     if !matches!(source, Emulator::WinUae|Emulator::FsUae|Emulator::Amiberry) {
@@ -23,19 +45,46 @@ pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
     }
     let p=pairs(contents);
     let mut e=Ecim { source: Some(source), ..Ecim::default() };
-    e.machine.cpu=p.get("cpu_type").or_else(||p.get("cpu")).cloned();
-    e.machine.chipset=p.get("chipset").cloned();
-    e.machine.video_standard=p.get("video_standard").cloned();
-    e.machine.rom=p.get("kickstart_rom_file").or_else(||p.get("kickstart_file")).cloned();
-    e.machine.chip_ram_bytes=p.get("chip_memory").and_then(|v|mib(v));
-    e.machine.fast_ram_bytes=p.get("fast_memory").and_then(|v|mib(v));
+    e.machine.model=first(&p,&["model","amiga_model"]);
+    e.machine.cpu=first(&p,&["cpu_type","cpu"]);
+    e.machine.fpu=first(&p,&["fpu_model","fpu"]);
+    e.machine.mmu=first(&p,&["mmu","cpu_mmu"]).as_deref().and_then(bool_value);
+    e.machine.jit=first(&p,&["jit","cachesize"]).as_deref().and_then(|v| if v=="0"{Some(false)} else {bool_value(v).or(Some(true))});
+    e.machine.chipset=first(&p,&["chipset","chipset_compatible"]);
+    e.machine.video_standard=first(&p,&["video_standard"]).or_else(||p.get("ntsc").and_then(|v|bool_value(v)).map(|n|if n{"ntsc"}else{"pal"}.into()));
+    e.machine.rom=first(&p,&["kickstart_rom_file","kickstart_file"]);
+    e.machine.chip_ram_bytes=first(&p,&["chip_memory","chipmem_size"]).as_deref().and_then(mib);
+    e.machine.slow_ram_bytes=first(&p,&["slow_memory","bogomem_size"]).as_deref().and_then(mib);
+    e.machine.fast_ram_bytes=first(&p,&["fast_memory","fastmem_size"]).as_deref().and_then(mib);
+    e.machine.z3_ram_bytes=first(&p,&["zorro_iii_memory","z3mem_size"]).as_deref().and_then(mib);
+    e.machine.rtg=first(&p,&["rtg","rtg_nocustom"]).as_deref().and_then(bool_value);
+    e.audio.enabled=first(&p,&["sound","audio"]).as_deref().and_then(|v| if v=="none"||v=="0"{Some(false)}else{Some(true)});
+    e.input.joystick_port_0=first(&p,&["joystick_port_0","joyport0"]);
+    e.input.joystick_port_1=first(&p,&["joystick_port_1","joyport1"]);
 
-    const KNOWN: &[&str]=&["cpu_type","cpu","chipset","video_standard","kickstart_rom_file","kickstart_file","chip_memory","fast_memory","model","config_description"];
+    for i in 0..4 {
+        let keys=[format!("floppy_drive_{i}"),format!("floppy{i}")];
+        e.storage.floppies.push(keys.iter().find_map(|k|p.get(k).cloned()).filter(|s|!s.is_empty()));
+    }
+    e.storage.hardfiles=collect_indexed(&p,&["hard_drive_","hardfile"]);
+    e.storage.directories=collect_indexed(&p,&["filesystem_","directory_"]);
+
+    const KNOWN_PREFIXES:&[&str]=&[
+        "model","amiga_model","cpu_type","cpu","fpu_model","fpu","mmu","cpu_mmu","jit","cachesize",
+        "chipset","chipset_compatible","video_standard","ntsc","kickstart_rom_file","kickstart_file",
+        "chip_memory","chipmem_size","slow_memory","bogomem_size","fast_memory","fastmem_size",
+        "zorro_iii_memory","z3mem_size","rtg","rtg_nocustom","sound","audio","joystick_port_0",
+        "joystick_port_1","joyport0","joyport1","floppy_drive_","floppy","hard_drive_","hardfile",
+        "filesystem_","directory_","config_description"
+    ];
     for (k,v) in p {
-        if !KNOWN.contains(&k.as_str()) { e.preserved.insert(k,v); }
+        if !KNOWN_PREFIXES.iter().any(|x|k==*x||k.starts_with(x)) { e.preserved.insert(k,v); }
     }
     Ok(e)
 }
+
+fn line(out:&mut String,key:&str,value:impl std::fmt::Display){out.push_str(&format!("{key}={value}\n"));}
+fn bool_num(v:bool)->u8{if v{1}else{0}}
 
 pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     if !matches!(target, Emulator::WinUae|Emulator::FsUae|Emulator::Amiberry) {
@@ -43,17 +92,27 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     }
     let mut out=String::new();
     if target==Emulator::FsUae { out.push_str("[fs-uae]\n"); }
-    if target==Emulator::Amiberry { out.push_str("config_description=Converted by EmuConf\n"); }
-    if let Some(v)=&ecim.machine.cpu { out.push_str(&format!("cpu_type={v}\n")); }
-    if let Some(v)=&ecim.machine.chipset { out.push_str(&format!("chipset={v}\n")); }
-    if let Some(v)=&ecim.machine.video_standard { out.push_str(&format!("video_standard={v}\n")); }
-    if let Some(v)=&ecim.machine.rom {
-        let key=if target==Emulator::FsUae {"kickstart_file"} else {"kickstart_rom_file"};
-        out.push_str(&format!("{key}={v}\n"));
-    }
-    if let Some(v)=ecim.machine.chip_ram_bytes { out.push_str(&format!("chip_memory={}\n",v/(1024*1024))); }
-    if let Some(v)=ecim.machine.fast_ram_bytes { out.push_str(&format!("fast_memory={}\n",v/(1024*1024))); }
-    for (k,v) in &ecim.preserved { out.push_str(&format!("{k}={v}\n")); }
+    if target==Emulator::Amiberry { line(&mut out,"config_description","Converted by EmuConf"); }
+    if let Some(v)=&ecim.machine.model { line(&mut out,"model",v); }
+    if let Some(v)=&ecim.machine.cpu { line(&mut out,"cpu_type",v); }
+    if let Some(v)=&ecim.machine.fpu { line(&mut out,"fpu_model",v); }
+    if let Some(v)=ecim.machine.mmu { line(&mut out,"mmu",bool_num(v)); }
+    if let Some(v)=ecim.machine.jit { line(&mut out,"jit",bool_num(v)); }
+    if let Some(v)=&ecim.machine.chipset { line(&mut out,"chipset",v); }
+    if let Some(v)=&ecim.machine.video_standard { line(&mut out,"video_standard",v); }
+    if let Some(v)=&ecim.machine.rom { line(&mut out,if target==Emulator::FsUae{"kickstart_file"}else{"kickstart_rom_file"},v); }
+    if let Some(v)=ecim.machine.chip_ram_bytes { line(&mut out,"chip_memory",v/(1024*1024)); }
+    if let Some(v)=ecim.machine.slow_ram_bytes { line(&mut out,"slow_memory",v/(1024*1024)); }
+    if let Some(v)=ecim.machine.fast_ram_bytes { line(&mut out,"fast_memory",v/(1024*1024)); }
+    if let Some(v)=ecim.machine.z3_ram_bytes { line(&mut out,"zorro_iii_memory",v/(1024*1024)); }
+    if let Some(v)=ecim.machine.rtg { line(&mut out,"rtg",bool_num(v)); }
+    if let Some(v)=ecim.audio.enabled { line(&mut out,"sound",if v{"normal"}else{"none"}); }
+    if let Some(v)=&ecim.input.joystick_port_0 { line(&mut out,"joystick_port_0",v); }
+    if let Some(v)=&ecim.input.joystick_port_1 { line(&mut out,"joystick_port_1",v); }
+    for (i,v) in ecim.storage.floppies.iter().enumerate() { if let Some(v)=v { line(&mut out,&format!("floppy_drive_{i}"),v); } }
+    for (i,v) in ecim.storage.hardfiles.iter().enumerate() { line(&mut out,&format!("hard_drive_{i}"),v); }
+    for (i,v) in ecim.storage.directories.iter().enumerate() { line(&mut out,&format!("filesystem_{i}"),v); }
+    for (k,v) in &ecim.preserved { line(&mut out,k,v); }
     Ok(out)
 }
 
@@ -61,12 +120,24 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
 mod tests {
     use super::*;
 
+    const FULL:&str="model=A1200\ncpu_type=68020\nfpu_model=68882\nmmu=1\njit=0\nchipset=aga\nvideo_standard=pal\nchip_memory=2\nslow_memory=1\nfast_memory=8\nzorro_iii_memory=16\nkickstart_rom_file=kick.rom\nrtg=1\nsound=normal\njoystick_port_0=mouse\njoystick_port_1=joy0\nfloppy_drive_0=Workbench.adf\nhard_drive_0=system.hdf\nfilesystem_0=DH1:/data\n";
+
     #[test]
-    fn winuae_to_fsuae_round_trip_core_fields() {
-        let src="cpu_type=68020\nchipset=aga\nchip_memory=2\nfast_memory=8\nkickstart_rom_file=kick.rom\n";
-        let ecim=import(Emulator::WinUae,src).unwrap();
+    fn winuae_to_fsuae_round_trip_machine() {
+        let ecim=import(Emulator::WinUae,FULL).unwrap();
         let fs=export(Emulator::FsUae,&ecim).unwrap();
         let again=import(Emulator::FsUae,&fs).unwrap();
+        assert_eq!(ecim.machine,again.machine);
+        assert_eq!(ecim.storage,again.storage);
+        assert_eq!(ecim.input,again.input);
+        assert_eq!(ecim.audio,again.audio);
+    }
+
+    #[test]
+    fn amiberry_round_trip() {
+        let ecim=import(Emulator::Amiberry,&format!("config_description=test\n{FULL}")).unwrap();
+        let text=export(Emulator::Amiberry,&ecim).unwrap();
+        let again=import(Emulator::Amiberry,&text).unwrap();
         assert_eq!(ecim.machine,again.machine);
     }
 

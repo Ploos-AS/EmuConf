@@ -1,11 +1,13 @@
-use std::{env, fs, process};
 use emuconf_core::{compatibility, detect_format, export, import, semantic_diff, Emulator};
+use std::{env, fs, process};
 
 fn usage() {
     eprintln!("Usage:");
     eprintln!("  emuconf detect <config>");
     eprintln!("  emuconf inspect <config>");
-    eprintln!("  emuconf convert <config> --to <winuae|fs-uae|amiberry|fellow|fellowng|copperline>");
+    eprintln!(
+        "  emuconf convert <config> --to <winuae|fs-uae|amiberry|fellow|fellowng|copperline>"
+    );
     eprintln!("  emuconf validate <config>");
     eprintln!("  emuconf compatibility <config> --to <format>");
     eprintln!("  emuconf diff <config-a> <config-b>");
@@ -25,9 +27,12 @@ fn target(s: &str) -> Option<Emulator> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 { usage(); process::exit(2); }
-    let command=&args[1];
-    let path=&args[2];
+    if args.len() < 3 {
+        usage();
+        process::exit(2);
+    }
+    let command = &args[1];
+    let path = &args[2];
     let contents=fs::read_to_string(path).unwrap_or_else(|e| { eprintln!("emuconf: cannot read {path}: {e}"); process::exit(1) });
     let detection=detect_format(path,&contents).unwrap_or_else(|| { eprintln!("emuconf: format not recognized"); process::exit(1) });
 

@@ -12,37 +12,43 @@ pub fn detect_format(name: &str, contents: &str) -> Option<Detection> {
     let lower = contents.to_ascii_lowercase();
 
     if lower.contains("[fs-uae]") || lower_name.ends_with(".fs-uae") {
-        return Some(Detection {emulator: Emulator::FsUae,
+        return Some(Detection {
+            emulator: Emulator::FsUae,
             confidence: 95,
             reason: "FS-UAE section or extension",
         });
     }
     if lower.contains("amiberry") || lower.contains("config_description=amiberry") {
-        return Some(Detection {emulator: Emulator::Amiberry,
+        return Some(Detection {
+            emulator: Emulator::Amiberry,
             confidence: 95,
             reason: "Amiberry marker",
         });
     }
     if lower.contains("fellowng") {
-        return Some(Detection {emulator: Emulator::FellowNg,
+        return Some(Detection {
+            emulator: Emulator::FellowNg,
             confidence: 90,
             reason: "FellowNG marker",
         });
     }
     if lower.contains("copperline") {
-        return Some(Detection {emulator: Emulator::Copperline,
+        return Some(Detection {
+            emulator: Emulator::Copperline,
             confidence: 90,
             reason: "Copperline marker",
         });
     }
     if lower.contains("fellow") {
-        return Some(Detection {emulator: Emulator::Fellow,
+        return Some(Detection {
+            emulator: Emulator::Fellow,
             confidence: 70,
             reason: "Fellow marker",
         });
     }
     if lower_name.ends_with(".uae") || lower.contains("use_gui=") || lower.contains("cpu_type=") {
-        return Some(Detection {emulator: Emulator::WinUae,
+        return Some(Detection {
+            emulator: Emulator::WinUae,
             confidence: 60,
             reason: "UAE-style configuration",
         });

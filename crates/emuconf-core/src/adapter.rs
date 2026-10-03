@@ -45,14 +45,14 @@ pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
     }
     let p=pairs(contents);
     let mut e=Ecim { source: Some(source), ..Ecim::default() };
-    e.machine.model=first(&p,&["model","amiga_model","fellow_model"]);
-    e.machine.cpu=first(&p,&["cpu_type","cpu","fellow_cpu"]);
+    e.machine.model=first(&p,&["model","amiga_model","fellow_model","machine"]);
+    e.machine.cpu=first(&p,&["cpu_type","cpu","fellow_cpu","processor"]);
     e.machine.fpu=first(&p,&["fpu_model","fpu"]);
     e.machine.mmu=first(&p,&["mmu","cpu_mmu"]).as_deref().and_then(bool_value);
     e.machine.jit=first(&p,&["jit","cachesize"]).as_deref().and_then(|v| if v=="0"{Some(false)} else {bool_value(v).or(Some(true))});
-    e.machine.chipset=first(&p,&["chipset","chipset_compatible","fellow_chipset"]);
+    e.machine.chipset=first(&p,&["chipset","chipset_compatible","fellow_chipset","custom_chipset"]);
     e.machine.video_standard=first(&p,&["video_standard"]).or_else(||p.get("ntsc").and_then(|v|bool_value(v)).map(|n|if n{"ntsc"}else{"pal"}.into()));
-    e.machine.rom=first(&p,&["kickstart_rom_file","kickstart_file","kickstart","rom"]);
+    e.machine.rom=first(&p,&["kickstart_rom_file","kickstart_file","kickstart","rom","rom_file"]);
     e.machine.chip_ram_bytes=first(&p,&["chip_memory","chipmem_size"]).as_deref().and_then(mib);
     e.machine.slow_ram_bytes=first(&p,&["slow_memory","bogomem_size"]).as_deref().and_then(mib);
     e.machine.fast_ram_bytes=first(&p,&["fast_memory","fastmem_size"]).as_deref().and_then(mib);

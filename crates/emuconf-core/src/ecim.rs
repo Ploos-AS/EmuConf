@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
-use serde::{Deserialize, Serialize};
 use crate::{Diagnostic, Emulator};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 pub const ECIM_VERSION: u32 = 1;
 

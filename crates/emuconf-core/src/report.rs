@@ -86,11 +86,7 @@ pub fn compatibility(ecim: &Ecim, target: Emulator) -> CompatibilityReport {
         .sum();
     CompatibilityReport {
         target,
-        score: if total == 0 {
-            100
-        } else {
-            (points / total) as u8
-        },
+        score: points.checked_div(total).map_or(100, |score| score as u8),
         fields,
     }
 }

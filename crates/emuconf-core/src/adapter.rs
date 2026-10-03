@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, error::Error, fmt};
 use crate::{Ecim, Emulator};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -6,6 +6,17 @@ pub enum AdapterError {
     UnsupportedSource(Emulator),
     UnsupportedTarget(Emulator),
 }
+
+impl fmt::Display for AdapterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnsupportedSource(e) => write!(f, "unsupported source format: {}", e.id()),
+            Self::UnsupportedTarget(e) => write!(f, "unsupported target format: {}", e.id()),
+        }
+    }
+}
+
+impl Error for AdapterError {}
 
 fn pairs(contents: &str) -> BTreeMap<String, String> {
     contents.lines().filter_map(|line| {

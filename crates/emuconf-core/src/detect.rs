@@ -53,8 +53,32 @@ pub fn detect_format(name: &str, contents: &str) -> Option<Detection> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]\n    fn detects_fs_uae() {\n        assert_eq!(\n            detect_format("x.fs-uae", "[fs-uae]
-model=A1200").unwrap().emulator,\n            Emulator::FsUae\n        );\n    }
-    #[test] fn generic_uae_is_winuae(){assert_eq!(detect_format("x.uae","cpu_type=68020").unwrap().emulator,Emulator::WinUae);}
-    #[test] fn explicit_amiberry_wins(){assert_eq!(detect_format("x.uae","config_description=Amiberry profile").unwrap().emulator,Emulator::Amiberry);}
+
+    #[test]
+    fn detects_fs_uae() {
+        assert_eq!(
+            detect_format("x.fs-uae", "[fs-uae]\nmodel=A1200")
+                .unwrap()
+                .emulator,
+            Emulator::FsUae
+        );
+    }
+
+    #[test]
+    fn generic_uae_is_winuae() {
+        assert_eq!(
+            detect_format("x.uae", "cpu_type=68020").unwrap().emulator,
+            Emulator::WinUae
+        );
+    }
+
+    #[test]
+    fn explicit_amiberry_wins() {
+        assert_eq!(
+            detect_format("x.uae", "config_description=Amiberry profile")
+                .unwrap()
+                .emulator,
+            Emulator::Amiberry
+        );
+    }
 }

@@ -35,7 +35,7 @@ Conversion targets currently include WinUAE, FS-UAE, Amiberry, Fellow, FellowNG,
 - **M2** Fellow and FellowNG — implemented
 - **M3** Copperline — implemented
 - **M4** fidelity reporting and round-trip corpus — implemented
-- **M5** Amilea/AmiVM integration
+- **M5** Amilea/AmiVM integration — implemented
 - **M6** stable API/CLI and v1.0.0
 
 ## License
@@ -55,3 +55,7 @@ Fellow, FellowNG, and Copperline now participate in the same ECIM import/export 
 ## M4 validation and fidelity
 
 EmuConf now provides `validate`, `compatibility --to <format>`, and semantic `diff`. Compatibility is field-based and uses the ECIM fidelity classes Exact, Mapped, Approximate, Unsupported, and Preserved. Semantic diff compares normalized ECIM sections instead of textual formatting.
+
+## M5 embedding API
+
+Rust consumers such as Amilea and AmiVM can depend on `emuconf-core` directly. The public consumer surface provides `load(name, text)` for detection + import, `load_as(format, text)` for explicit formats, `LoadedConfig::compatibility()`, and `LoadedConfig::export()`. An executable embedding example is included under `crates/emuconf-core/examples/embed.rs`.

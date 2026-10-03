@@ -34,7 +34,7 @@ Conversion targets currently include WinUAE, FS-UAE, Amiberry, Fellow, FellowNG,
 - **M1** WinUAE, FS-UAE, and Amiberry import/export — implemented
 - **M2** Fellow and FellowNG — implemented
 - **M3** Copperline — implemented
-- **M4** fidelity reporting and round-trip corpus
+- **M4** fidelity reporting and round-trip corpus — implemented
 - **M5** Amilea/AmiVM integration
 - **M6** stable API/CLI and v1.0.0
 
@@ -51,3 +51,7 @@ The mappings are intentionally conservative. Emulator-specific semantics will co
 ## M2–M3 adapters
 
 Fellow, FellowNG, and Copperline now participate in the same ECIM import/export pipeline and CLI conversion surface. Their initial mappings are conservative: common Amiga machine/storage/input/audio state is normalized, while emulator-specific key/value options remain preserved for later fidelity refinement.
+
+## M4 validation and fidelity
+
+EmuConf now provides `validate`, `compatibility --to <format>`, and semantic `diff`. Compatibility is field-based and uses the ECIM fidelity classes Exact, Mapped, Approximate, Unsupported, and Preserved. Semantic diff compares normalized ECIM sections instead of textual formatting.

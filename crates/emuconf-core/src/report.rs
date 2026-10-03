@@ -15,7 +15,7 @@ pub struct CompatibilityReport {
 
 fn supported(target: Emulator, field: &'static str) -> Fidelity {
     match target {
-        Emulator::WinUae|Emulator::FsUae|Emulator::Amiberry => Fidelity::Exact,
+        Emulator::WinUae | Emulator::FsUae | Emulator::Amiberry => Fidelity::Exact,
         Emulator::Fellow => match field {
             "machine.fpu"|"machine.mmu"|"machine.jit"|"machine.z3_ram"|"machine.rtg" => Fidelity::Unsupported,
             _ => Fidelity::Mapped,

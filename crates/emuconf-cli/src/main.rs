@@ -62,7 +62,7 @@ fn main() {
         }
         "convert" => {
             if args.len()!=5 || args[3]!="--to" { usage(); process::exit(2); }
-            let to=target(&args[4]).unwrap_or_else(|| { eprintln!("emuconf: unsupported M1 target {}",args[4]); process::exit(2) });
+            let to=target(&args[4]).unwrap_or_else(|| { eprintln!("emuconf: unsupported target {}",args[4]); process::exit(2) });
             let ecim=import(detection.emulator,&contents).unwrap_or_else(|e| { eprintln!("emuconf: import failed: {e:?}"); process::exit(3) });
             let output=export(to,&ecim).unwrap_or_else(|e| { eprintln!("emuconf: export failed: {e:?}"); process::exit(3) });
             print!("{output}");

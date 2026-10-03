@@ -36,7 +36,7 @@ Conversion targets currently include WinUAE, FS-UAE, Amiberry, Fellow, FellowNG,
 - **M3** Copperline — implemented
 - **M4** fidelity reporting and round-trip corpus — implemented
 - **M5** Amilea/AmiVM integration — implemented
-- **M6** stable API/CLI and v1.0.0
+- **M6** stable API/CLI and first release — implemented
 
 ## License
 
@@ -59,3 +59,7 @@ EmuConf now provides `validate`, `compatibility --to <format>`, and semantic `di
 ## M5 embedding API
 
 Rust consumers such as Amilea and AmiVM can depend on `emuconf-core` directly. The public consumer surface provides `load(name, text)` for detection + import, `load_as(format, text)` for explicit formats, `LoadedConfig::compatibility()`, and `LoadedConfig::export()`. An executable embedding example is included under `crates/emuconf-core/examples/embed.rs`.
+
+## Release status
+
+The first development release is version **0.1.0**. The API is now shaped for external Rust consumers and public errors implement the standard Rust error traits. A 1.0 release remains reserved for a substantially broader real-world configuration corpus and compatibility validation.

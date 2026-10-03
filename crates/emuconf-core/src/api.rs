@@ -68,7 +68,7 @@ pub fn load_as(source: Emulator, contents: &str) -> Result<LoadedConfig, ApiErro
 }
 
 pub fn convert(name: &str, contents: &str, target: Emulator) -> Result<String, ApiError> {
-    load(name,contents)?.export(target)
+    load(name, contents)?.export(target)
 }
 
 #[cfg(test)]

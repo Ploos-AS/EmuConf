@@ -1,0 +1,16 @@
+config_description=EmuConf WinUAE A1200 fixture
+model=A1200
+cpu_type=68020
+fpu_model=68882
+mmu=1
+jit=0
+chipset=aga
+video_standard=pal
+chip_memory=2
+fast_memory=8
+kickstart_rom_file=kick31.rom
+sound=normal
+joystick_port_0=mouse
+joystick_port_1=joy0
+floppy_drive_0=Workbench.adf
+hard_drive_0=system.hdf

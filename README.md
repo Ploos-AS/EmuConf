@@ -8,7 +8,7 @@ EmuConf converts emulator configuration files through a canonical intermediate m
 
 M0 establishes the architecture for Amiga emulators: WinUAE, FS-UAE, Amiberry, Fellow, FellowNG, and Copperline.
 
-The canonical representation is the **EmuConf Intermediate Model (ECIM)**. M0 provides the Rust workspace, ECIM foundations, emulator identifiers, diagnostics/loss model, format detection API, CLI surface, fixtures, and tests. Full configuration mappings begin in M1.
+The canonical representation is the **EmuConf Intermediate Model (ECIM)**. M0 provides the Rust workspace, ECIM foundations, emulator identifiers, diagnostics/loss model, format detection API, CLI surface, fixtures, and tests. M1 implements the first practical WinUAE, FS-UAE, and Amiberry conversion layer.
 
 ## Principles
 
@@ -31,7 +31,7 @@ During M0, `convert` intentionally reports that conversion adapters are not impl
 ## Roadmap
 
 - **M0** Foundation and ECIM
-- **M1** WinUAE, FS-UAE, and Amiberry import/export
+- **M1** WinUAE, FS-UAE, and Amiberry import/export — implemented
 - **M2** Fellow and FellowNG
 - **M3** Copperline
 - **M4** fidelity reporting and round-trip corpus
@@ -41,3 +41,9 @@ During M0, `convert` intentionally reports that conversion adapters are not impl
 ## License
 
 MIT
+
+## M1 supported model
+
+The UAE-family adapters currently normalize model, CPU/FPU/MMU/JIT, chipset and video standard, Chip/Slow/Fast/Z3 RAM, Kickstart ROM, RTG, audio, joystick ports, four floppy slots, hardfile mounts, and directory mounts. Unknown key/value options are preserved when possible.
+
+The mappings are intentionally conservative. Emulator-specific semantics will continue to be refined against real configuration corpora.

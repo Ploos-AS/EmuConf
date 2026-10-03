@@ -133,13 +133,9 @@ pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
     e.machine.rtg = first(&p, &["rtg", "rtg_nocustom"])
         .as_deref()
         .and_then(bool_value);
-    e.audio.enabled = first(&p, &["sound", "audio"]).as_deref().and_then(|v| {
-        if v == "none" || v == "0" {
-            Some(false)
-        } else {
-            Some(true)
-        }
-    });
+    e.audio.enabled = first(&p, &["sound", "audio"])
+        .as_deref()
+        .map(|v| v != "none" && v != "0");
     e.input.joystick_port_0 = first(&p, &["joystick_port_0", "joyport0"]);
     e.input.joystick_port_1 = first(&p, &["joystick_port_1", "joyport1"]);
 

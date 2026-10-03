@@ -5,7 +5,7 @@ fn usage() {
     eprintln!("Usage:");
     eprintln!("  emuconf detect <config>");
     eprintln!("  emuconf inspect <config>");
-    eprintln!("  emuconf convert <config> --to <winuae|fs-uae|amiberry|fellow|fellowng>");
+    eprintln!("  emuconf convert <config> --to <winuae|fs-uae|amiberry|fellow|fellowng|copperline>");
 }
 
 fn target(s: &str) -> Option<Emulator> {
@@ -15,6 +15,7 @@ fn target(s: &str) -> Option<Emulator> {
         "amiberry" => Some(Emulator::Amiberry),
         "fellow" => Some(Emulator::Fellow),
         "fellowng" | "fellow-ng" => Some(Emulator::FellowNg),
+        "copperline" => Some(Emulator::Copperline),
         _ => None,
     }
 }

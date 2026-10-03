@@ -1,5 +1,7 @@
+use crate::{
+    compatibility, detect_format, export, import, AdapterError, CompatibilityReport, Ecim, Emulator,
+};
 use std::{error::Error, fmt};
-use crate::{compatibility, detect_format, export, import, AdapterError, CompatibilityReport, Ecim, Emulator};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApiError {
@@ -9,13 +11,25 @@ pub enum ApiError {
 
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self { Self::UnknownFormat => write!(f, "configuration format not recognized"), Self::Adapter(e) => e.fmt(f) }
+        match self {
+            Self::UnknownFormat => write!(f, "configuration format not recognized"),
+            Self::Adapter(e) => e.fmt(f),
+        }
     }
 }
-impl Error for ApiError { fn source(&self) -> Option<&(dyn Error + 'static)> { match self { Self::Adapter(e) => Some(e), _ => None } } }
+impl Error for ApiError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Adapter(e) => Some(e),
+            _ => None,
+        }
+    }
+}
 
 impl From<AdapterError> for ApiError {
-    fn from(value: AdapterError) -> Self { Self::Adapter(value) }
+    fn from(value: AdapterError) -> Self {
+        Self::Adapter(value)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,14 +49,22 @@ impl LoadedConfig {
 }
 
 pub fn load(name: &str, contents: &str) -> Result<LoadedConfig, ApiError> {
-    let detection=detect_format(name,contents).ok_or(ApiError::UnknownFormat)?;
-    let ecim=import(detection.emulator,contents)?;
-    Ok(LoadedConfig{ecim,detected:detection.emulator,confidence:detection.confidence})
+    let detection = detect_format(name, contents).ok_or(ApiError::UnknownFormat)?;
+    let ecim = import(detection.emulator, contents)?;
+    Ok(LoadedConfig {
+        ecim,
+        detected: detection.emulator,
+        confidence: detection.confidence,
+    })
 }
 
 pub fn load_as(source: Emulator, contents: &str) -> Result<LoadedConfig, ApiError> {
-    let ecim=import(source,contents)?;
-    Ok(LoadedConfig{ecim,detected:source,confidence:100})
+    let ecim = import(source, contents)?;
+    Ok(LoadedConfig {
+        ecim,
+        detected: source,
+        confidence: 100,
+    })
 }
 
 pub fn convert(name: &str, contents: &str, target: Emulator) -> Result<String, ApiError> {
@@ -52,15 +74,17 @@ pub fn convert(name: &str, contents: &str, target: Emulator) -> Result<String, A
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn consumer_can_load_and_export_without_cli(){
-        let cfg=load("machine.uae","cpu_type=68020\nchipset=aga\n").unwrap();
-        assert_eq!(cfg.detected,Emulator::WinUae);
-        assert_eq!(cfg.ecim.machine.cpu.as_deref(),Some("68020"));
+    #[test]
+    fn consumer_can_load_and_export_without_cli() {
+        let cfg = load("machine.uae", "cpu_type=68020\nchipset=aga\n").unwrap();
+        assert_eq!(cfg.detected, Emulator::WinUae);
+        assert_eq!(cfg.ecim.machine.cpu.as_deref(), Some("68020"));
         assert!(cfg.export(Emulator::FsUae).unwrap().starts_with("[fs-uae]"));
     }
-    #[test] fn explicit_source_supports_embedded_consumers(){
-        let cfg=load_as(Emulator::Copperline,"processor=68020\n").unwrap();
-        assert_eq!(cfg.ecim.machine.cpu.as_deref(),Some("68020"));
-        assert_eq!(cfg.confidence,100);
+    #[test]
+    fn explicit_source_supports_embedded_consumers() {
+        let cfg = load_as(Emulator::Copperline, "processor=68020\n").unwrap();
+        assert_eq!(cfg.ecim.machine.cpu.as_deref(), Some("68020"));
+        assert_eq!(cfg.confidence, 100);
     }
 }

@@ -1,3 +1,4 @@
+use std::{error::Error, fmt};
 use crate::{compatibility, detect_format, export, import, AdapterError, CompatibilityReport, Ecim, Emulator};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -5,6 +6,13 @@ pub enum ApiError {
     UnknownFormat,
     Adapter(AdapterError),
 }
+
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self { Self::UnknownFormat => write!(f, "configuration format not recognized"), Self::Adapter(e) => e.fmt(f) }
+    }
+}
+impl Error for ApiError { fn source(&self) -> Option<&(dyn Error + 'static)> { match self { Self::Adapter(e) => Some(e), _ => None } } }
 
 impl From<AdapterError> for ApiError {
     fn from(value: AdapterError) -> Self { Self::Adapter(value) }

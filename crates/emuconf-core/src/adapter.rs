@@ -154,9 +154,11 @@ pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
         "model",
         "amiga_model",
         "fellow_model",
+        "machine",
         "cpu_type",
         "cpu",
         "fellow_cpu",
+        "processor",
         "fpu_model",
         "fpu",
         "mmu",
@@ -166,12 +168,14 @@ pub fn import(source: Emulator, contents: &str) -> Result<Ecim, AdapterError> {
         "chipset",
         "chipset_compatible",
         "fellow_chipset",
+        "custom_chipset",
         "video_standard",
         "ntsc",
         "kickstart_rom_file",
         "kickstart_file",
         "kickstart",
         "rom",
+        "rom_file",
         "chip_memory",
         "chipmem_size",
         "slow_memory",
@@ -246,10 +250,9 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     if let Some(v) = &ecim.machine.model {
         line(
             &mut out,
-            if matches!(
-                target,
-                Emulator::Fellow | Emulator::FellowNg | Emulator::Copperline
-            ) {
+            if target == Emulator::Copperline {
+                "machine"
+            } else if matches!(target, Emulator::Fellow | Emulator::FellowNg) {
                 "fellow_model"
             } else {
                 "model"
@@ -260,10 +263,9 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     if let Some(v) = &ecim.machine.cpu {
         line(
             &mut out,
-            if matches!(
-                target,
-                Emulator::Fellow | Emulator::FellowNg | Emulator::Copperline
-            ) {
+            if target == Emulator::Copperline {
+                "processor"
+            } else if matches!(target, Emulator::Fellow | Emulator::FellowNg) {
                 "fellow_cpu"
             } else {
                 "cpu_type"
@@ -283,10 +285,9 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     if let Some(v) = &ecim.machine.chipset {
         line(
             &mut out,
-            if matches!(
-                target,
-                Emulator::Fellow | Emulator::FellowNg | Emulator::Copperline
-            ) {
+            if target == Emulator::Copperline {
+                "custom_chipset"
+            } else if matches!(target, Emulator::Fellow | Emulator::FellowNg) {
                 "fellow_chipset"
             } else {
                 "chipset"
@@ -300,10 +301,9 @@ pub fn export(target: Emulator, ecim: &Ecim) -> Result<String, AdapterError> {
     if let Some(v) = &ecim.machine.rom {
         let key = if target == Emulator::FsUae {
             "kickstart_file"
-        } else if matches!(
-            target,
-            Emulator::Fellow | Emulator::FellowNg | Emulator::Copperline
-        ) {
+        } else if target == Emulator::Copperline {
+            "rom_file"
+        } else if matches!(target, Emulator::Fellow | Emulator::FellowNg) {
             "kickstart"
         } else {
             "kickstart_rom_file"
@@ -388,6 +388,26 @@ mod tests {
         let again = import(Emulator::FellowNg, &out).unwrap();
         assert_eq!(ecim.machine, again.machine);
         assert_eq!(ecim.storage, again.storage);
+    }
+
+    #[test]
+    fn copperline_round_trip_uses_copperline_keys() {
+        let src = "# Copperline\nmachine=A1200\nprocessor=68020\ncustom_chipset=aga\nrom_file=kick31.rom\nchip_memory=2\nfast_memory=8\nfloppy_drive_0=Workbench.adf\nsound=normal\n";
+        let ecim = import(Emulator::Copperline, src).unwrap();
+        let out = export(Emulator::Copperline, &ecim).unwrap();
+
+        assert!(out.contains("machine=A1200\n"));
+        assert!(out.contains("processor=68020\n"));
+        assert!(out.contains("custom_chipset=aga\n"));
+        assert!(out.contains("rom_file=kick31.rom\n"));
+        assert!(!out.contains("fellow_model="));
+        assert!(!out.contains("fellow_cpu="));
+        assert!(!out.contains("fellow_chipset="));
+
+        let again = import(Emulator::Copperline, &out).unwrap();
+        assert_eq!(ecim.machine, again.machine);
+        assert_eq!(ecim.storage, again.storage);
+        assert_eq!(ecim.audio, again.audio);
     }
 
     #[test]
